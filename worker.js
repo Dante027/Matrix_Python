@@ -1,5 +1,4 @@
-// JavaScript source code
-// nazwac potem worker.js
+//To jest worker.js
 
 onemessage = function (e) {
     const { A, B } = e.data;
