@@ -1,0 +1,189 @@
+<!-- index.html -->
+
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Mnożenie macierzy z animacją</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #121212;
+            color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .matrix-wrapper {
+            display: flex;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .matrix {
+            display: grid;
+            gap: 5px;
+        }
+
+        .matrix-cell {
+            width: 50px;
+            height: 50px;
+            background-color: #1e1e1e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #555;
+            font-weight: bold;
+        }
+
+        .active {
+            background-color: #0077cc;
+        }
+
+        .highlight {
+            background-color: #00cc66;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: flex;
+            flex-direction: column;
+            font-size: 14px;
+        }
+
+        input[type="number"] {
+            margin-top: 5px;
+            padding: 5px;
+            background-color: #1e1e1e;
+            color: #f5f5f5;
+            border: 1px solid #444;
+            border-radius: 4px;
+            width: 80px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            background-color: #0077cc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+            button:hover {
+                background-color: #005fa3;
+            }
+    </style>
+</head>
+<body>
+    <h1>Mnożenie macierzy z animacją i Web Workerami</h1>
+
+    <div class="controls">
+        <label>
+            Rozmiar macierzy:
+            <input type="number" id="size" value="3" min="1">
+        </label>
+        <label>
+            Liczba wątków:
+            <input type="number" id="threads" value="2" min="1">
+        </label>
+        <button onclick="startMultiplication()">Start</button>
+    </div>
+
+    <div class="matrix-wrapper">
+        <div>
+            <h3>Macierz A</h3>
+            <div id="matrixA" class="matrix"></div>
+        </div>
+        <div>
+            <h3>Macierz B</h3>
+            <div id="matrixB" class="matrix"></div>
+        </div>
+        <div>
+            <h3>Macierz C</h3>
+            <div id="matrixC" class="matrix"></div>
+        </div>
+    </div>
+
+    <script>
+        let A, B, C;
+
+        function generateRandomMatrix(size) {
+            return Array.from({ length: size }, () =>
+                Array.from({ length: size }, () => Math.floor(Math.random() * 10))
+            );
+        }
+
+        function renderMatrix(matrix, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = "";
+            container.style.gridTemplateColumns = `repeat(${matrix[0].length}, 50px)`;
+
+            matrix.forEach((row, i) => {
+                row.forEach((cell, j) => {
+                    const div = document.createElement("div");
+                    div.className = "matrix-cell";
+                    div.id = `${containerId}-${i}-${j}`;
+                    div.textContent = cell;
+                    container.appendChild(div);
+                });
+            });
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function calculateElement(i, j, size) {
+            const cell = document.getElementById(`matrixC-${i}-${j}`);
+            cell.classList.add("active");
+            await sleep(500);
+            let sum = 0;
+            for (let k = 0; k < size; k++) {
+                sum += A[i][k] * B[k][j];
+            }
+            C[i][j] = sum;
+            cell.textContent = sum;
+            cell.classList.remove("active");
+            cell.classList.add("highlight");
+        }
+
+        async function startMultiplication() {
+            const size = parseInt(document.getElementById("size").value);
+            const threadCount = parseInt(document.getElementById("threads").value);
+
+            A = generateRandomMatrix(size);
+            B = generateRandomMatrix(size);
+            C = Array.from({ length: size }, () => Array(size).fill(0));
+
+            renderMatrix(A, "matrixA");
+            renderMatrix(B, "matrixB");
+            renderMatrix(C, "matrixC");
+
+            const tasks = [];
+            for (let i = 0; i < size; i++) {
+                for (let j = 0; j < size; j++) {
+                    tasks.push(() => calculateElement(i, j, size));
+                }
+            }
+
+            let index = 0;
+            async function runThread() {
+                while (index < tasks.length) {
+                    const current = index++;
+                    await tasks[current]();
+                }
+            }
+
+            const threads = Array.from({ length: threadCount }, runThread);
+            await Promise.all(threads);
+        }
+    </script>
+</body>
+</html>
