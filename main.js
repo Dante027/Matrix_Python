@@ -1,5 +1,5 @@
 
-// function about multiplication of matrices
+// Funkcja pozwalajaca mnozyc macierze
 
 function multiplyMatrices(A, B) {
     const rows = A.length;
@@ -19,7 +19,7 @@ function multiplyMatrices(A, B) {
 }
 
 // Funkcja odpowiadajaca
-//za wyswietlenie operacji mnozenia na macierzach
+//za WYSWIETLANIE operacji mnozenia na macierzach
 
 function startMultiplication() {
     const C = multiplyMatrices(A, B);
